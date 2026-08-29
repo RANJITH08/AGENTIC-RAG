@@ -18,9 +18,11 @@ User Query
 Retrieve Documents
     ↓
 Generate Answer
+```
 
 this system introduces an agentic decision-making layer:
 
+```text
 User Query
     ↓
 Agent Decision
@@ -48,26 +50,34 @@ Generate Answer     Reformulate Query
                     Relevance Check
                           ↓
                      Final Answer
+```
 
 The system therefore doesn't blindly retrieve and answer. It can decide, retrieve, evaluate, recover, and answer.
 
-✨ Key Features
-🧠 Intelligent Retrieval Routing
-🔎 Semantic Vector Search
-📚 Document-based Question Answering
-🧪 LLM-based Relevance Checking
-🔄 Automatic Query Reformulation
-♻️ Controlled Retrieval Retries
-💬 Context-Grounded Answer Generation
-📊 Execution Trace Tracking
-🖥️ Interactive Web Frontend
-⚡ Groq-powered LLM inference
-🗂️ FAISS Vector Database
-🤗 Hugging Face Embeddings
-🐍 Python Backend
-⚛️ React + Vite Frontend
-🧠 How Agentic RAG Works
-1. User Query
+---
+
+## ✨ Key Features
+
+- 🧠 Intelligent Retrieval Routing
+- 🔎 Semantic Vector Search
+- 📚 Document-based Question Answering
+- 🧪 LLM-based Relevance Checking
+- 🔄 Automatic Query Reformulation
+- ♻️ Controlled Retrieval Retries
+- 💬 Context-Grounded Answer Generation
+- 📊 Execution Trace Tracking
+- 🖥️ Interactive Web Frontend
+- ⚡ Groq-powered LLM inference
+- 🗂️ FAISS Vector Database
+- 🤗 Hugging Face Embeddings
+- 🐍 Python Backend
+- ⚛️ React + Vite Frontend
+
+---
+
+## 🧠 How Agentic RAG Works
+
+### 1. User Query
 
 The user submits a question through the frontend.
 
@@ -75,38 +85,37 @@ Example:
 
 What is the employee work-from-home policy?
 
+
 The query is sent to the backend.
 
-2. Agent Decision
+### 2. Agent Decision
 
 The LLM first determines whether the question requires information from the document knowledge base.
 
-Example — Direct Query
-User:
-Hello, how are you?
+**Example — Direct Query**
 
-Agent:
-DIRECT
+User: Hello, how are you?
+Agent: DIRECT
 
 The system answers directly using the LLM.
 
-Example — Knowledge Query
-User:
-What is the company's leave policy?
+**Example — Knowledge Query**
 
-Agent:
-RETRIEVE
+User: What is the company's leave policy?
+Agent: RETRIEVE
 
 The system starts the retrieval pipeline.
 
-🔎 3. Semantic Retrieval
+### 🔎 3. Semantic Retrieval
 
 For retrieval-based queries, the system converts the query into an embedding using:
 
 sentence-transformers/all-MiniLM-L6-v2
 
+
 The embedding is searched against the FAISS vector database.
 
+```text
 User Query
     ↓
 Embedding Model
@@ -116,51 +125,30 @@ Query Vector
 FAISS Similarity Search
     ↓
 Top 4 Document Chunks
+```
 
-The current retriever is configured to return:
+The current retriever is configured to return `k = 4` document chunks.
 
-k = 4
+### 🧪 4. Relevance Checking
 
-document chunks.
-
-🧪 4. Relevance Checking
-
-Retrieved documents are not automatically trusted.
-
-The system sends the retrieved chunks to the LLM and asks whether they contain enough information to answer the original question.
+Retrieved documents are not automatically trusted. The system sends the retrieved chunks to the LLM and asks whether they contain enough information to answer the original question.
 
 Example:
 
-Question:
-What is the refund policy?
+Question: What is the refund policy?
+Retrieved Documents: Information about employee attendance...
+Relevance: NO
+Reason: The retrieved documents do not contain refund information.
 
-Retrieved Documents:
-Information about employee attendance...
 
-Relevance:
-NO
+- If relevant (`YES`) → the system proceeds to answer generation.
+- If not relevant (`NO`) → the system moves to query reformulation.
 
-Reason:
-The retrieved documents do not contain refund information.
-
-If the retrieved information is relevant:
-
-YES
-
-the system proceeds to answer generation.
-
-If it is not relevant:
-
-NO
-
-the system moves to query reformulation.
-
-🔄 5. Query Reformulation
+### 🔄 5. Query Reformulation
 
 When retrieval fails, the LLM generates a better search query.
 
-The reformulation process uses:
-
+```text
 Original Query
       +
 Previous Search Query
@@ -170,45 +158,31 @@ Relevance Failure Reason
      LLM
       ↓
 Improved Search Query
+```
 
 Example:
 
-Original:
-What is the refund period?
+Original: What is the refund period?
+↓ (poor retrieval)
+Reformulated: refund policy return period eligibility
 
-        ↓
-
-Poor Retrieval
-
-        ↓
-
-Reformulated:
-refund policy return period eligibility
 
 The new query is then sent to FAISS again.
 
-♻️ 6. Controlled Retry
+### ♻️ 6. Controlled Retry
 
-The system uses:
+The system uses `MAX_RETRIES = 2`, preventing infinite retrieval loops:
 
-MAX_RETRIES = 2
+Attempt 1 → Attempt 2 → Attempt 3
 
-This prevents infinite retrieval loops.
 
-Maximum retrieval attempts:
+After the retry limit is reached, the system proceeds with the best available retrieved context.
 
-Attempt 1
-    ↓
-Attempt 2
-    ↓
-Attempt 3
+### 💬 7. Final Answer Generation
 
-After the retry limit is reached, the system proceeds with the available retrieved context.
+Once relevant context is identified (or retries are exhausted), the system sends the retrieved information together with the original question to the LLM:
 
-💬 7. Final Answer Generation
-
-Once relevant context is identified, the system sends the retrieved information together with the original question to the LLM.
-
+```text
 Retrieved Context
        +
 Original Question
@@ -216,22 +190,22 @@ Original Question
     Groq LLM
        ↓
  Final Answer
+```
 
-The generation prompt instructs the model to answer using the provided context and acknowledge when the context is insufficient.
+The generation prompt instructs the model to answer using only the provided context and to acknowledge when the context is insufficient.
 
-📊 Execution Tracing
+---
 
-The application records the major stages of the Agentic RAG workflow.
+## 📊 Execution Tracing
 
-Each event contains:
+The application records the major stages of the Agentic RAG workflow. Each event contains:
 
-Step
-Detail
-Metadata
-Timestamp
+- Step
+- Detail
+- Metadata
+- Timestamp
 
-Example:
-
+```text
 🤖 Agent Decision
         ↓
 🔎 Retrieval
@@ -245,22 +219,20 @@ Example:
 🧪 Relevance Check
         ↓
 💬 Final Answer
+```
 
-The backend represents these events using a TraceEvent structure.
+The backend represents these events using a `TraceEvent` structure. Supported event types:
 
-Supported events include:
+agent_decision · retrieve · relevance_check · reformulate · answer_directly · final_answer · error
 
-agent_decision
-retrieve
-relevance_check
-reformulate
-answer_directly
-final_answer
-error
 
-This makes the system easier to debug and allows execution information to be displayed in the frontend.
+This makes the system easier to debug and allows execution information to be displayed live in the frontend.
 
-🏗️ System Architecture
+---
+
+## 🏗️ System Architecture
+
+```text
                          ┌──────────────────┐
                          │      USER        │
                          └────────┬─────────┘
@@ -273,7 +245,7 @@ This makes the system easier to debug and allows execution information to be dis
                                   │
                                   ▼
                          ┌──────────────────┐
-                         │   Python API     │
+                         │   FastAPI Python │
                          │     Backend      │
                          └────────┬─────────┘
                                   │
@@ -320,23 +292,39 @@ This makes the system easier to debug and allows execution information to be dis
                                │
                                ▼
                          React Frontend
-🛠️ Technology Stack
-Backend
-Technology	Purpose
-Python	Backend and AI application logic
-LangChain	LLM and RAG orchestration
-Groq	LLM inference
-Llama 3.3 70B	Language model
-FAISS	Vector similarity search
-Hugging Face	Embedding generation
-Sentence Transformers	Semantic embeddings
-Frontend
-Technology	Purpose
-React	User interface
-Vite	Frontend build and development
-JavaScript	Frontend logic
-HTML/CSS	Interface structure and styling
-📁 Project Structure
+```
+
+---
+
+## 🛠️ Technology Stack
+
+**Backend**
+
+| Technology | Purpose |
+|---|---|
+| Python | Backend and AI application logic |
+| FastAPI | REST API layer |
+| LangChain | LLM and RAG orchestration |
+| Groq | LLM inference |
+| gpt-oss-120b | Language model |
+| FAISS | Vector similarity search |
+| Hugging Face | Embedding generation |
+| Sentence Transformers | Semantic embeddings |
+
+**Frontend**
+
+| Technology | Purpose |
+|---|---|
+| React | User interface |
+| Vite | Frontend build and development |
+| JavaScript | Frontend logic |
+| HTML/CSS | Interface structure and styling |
+
+---
+
+## 📁 Project Structure
+
+```text
 agentic-rag/
 │
 ├── backend/
@@ -346,12 +334,13 @@ agentic-rag/
 │   ├── main.py
 │   ├── test_agent.py
 │   ├── requirements.txt
+│   ├── .env.example
 │   │
-│   ├── pdfs/
-│   ├── uploads/
-│   ├── vector_store/
-│   ├── .venv/
-│   └── .env
+│   ├── pdfs/            (local only)
+│   ├── uploads/         (local only, auto-created)
+│   ├── vector_store/    (local only, auto-generated)
+│   ├── .venv/           (local only)
+│   └── .env             (local only, never committed)
 │
 ├── frontend/
 │   │
@@ -365,21 +354,26 @@ agentic-rag/
 │
 ├── .gitignore
 └── README.md
-Important
+```
 
-The following directories/files are local-only and should not be committed:
+> **Important:** The following directories/files are local-only and should not be committed:
+> ```
+> backend/.env
+> backend/.venv/
+> backend/__pycache__/
+> backend/pdfs/
+> backend/uploads/
+> backend/vector_store/
+> frontend/node_modules/
+> ```
 
-backend/.env
-backend/.venv/
-backend/__pycache__/
-backend/pdfs/
-backend/uploads/
-backend/vector_store/
-frontend/node_modules/
-📚 Document Ingestion
+---
+
+## 📚 Document Ingestion
 
 The document ingestion pipeline converts source documents into searchable vector representations.
 
+```text
 PDF / Document
       ↓
 Document Loading
@@ -393,105 +387,111 @@ Document Chunks
 Hugging Face Embeddings
       ↓
 FAISS Vector Store
+```
 
-The ingestion logic is implemented in:
+The ingestion logic is implemented in `backend/ingest.py`. Run the ingestion process from the `backend/` directory:
 
-backend/ingest.py
+```bash
+python ingest.py --pdf_dir ./pdfs --out ./vector_store
+```
 
-Run the ingestion process from the backend directory:
+This generates the local FAISS vector store. New documents can also be added later through the `/upload` API endpoint without rebuilding the whole index.
 
-python ingest.py
+---
 
-This generates the local FAISS vector store.
+## ⚙️ Installation
 
-⚙️ Installation
-Prerequisites
+### Prerequisites
 
-Install:
+- Python 3.10+
+- Node.js & npm
+- Git
+- A Groq API Key ([console.groq.com](https://console.groq.com))
 
-Python 3.10+
-Node.js
-npm
-Git
-Groq API Key
-🔧 Backend Setup
+### 🔧 Backend Setup
 
 Navigate to the backend:
-
+```bash
 cd backend
+```
 
 Create a Python virtual environment:
 
-Windows
+**Windows**
+```bash
 python -m venv .venv
-
-Activate:
-
 .venv\Scripts\activate
-macOS / Linux
+```
+
+**macOS / Linux**
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
+```
 
 Install dependencies:
-
+```bash
 pip install -r requirements.txt
-🔐 Environment Variables
+```
 
-Create:
+### 🔐 Environment Variables
 
-backend/.env
+Copy the example file and fill in your key:
+```bash
+cp .env.example .env
+```
 
-Add:
+`backend/.env` should contain:
 
 GROQ_API_KEY=your_groq_api_key
 FAISS_INDEX_PATH=./vector_store
-Security Notice
 
-Never commit your .env file.
 
-Create a safe example file:
+**Security Notice:** Never commit your `.env` file. If a key is ever accidentally pushed to GitHub, immediately revoke/rotate it.
 
-backend/.env.example
+### ▶️ Run the Backend
 
-Example:
+From the `backend/` directory, with your virtual environment active:
 
-GROQ_API_KEY=your_groq_api_key_here
-FAISS_INDEX_PATH=./vector_store
-▶️ Run the Backend
+```bash
+uvicorn main:app --reload
+```
 
-From the backend directory:
+The API will be available at `http://127.0.0.1:8000`. Interactive docs (Swagger UI) are at `http://127.0.0.1:8000/docs`.
 
-python main.py
+### 🖥️ Frontend Setup
 
-The API will start according to the configuration defined in main.py.
-
-🖥️ Frontend Setup
-
-Open a new terminal.
-
-Navigate to:
-
+Open a new terminal and navigate to:
+```bash
 cd frontend
+```
 
 Install dependencies:
-
+```bash
 npm install
+```
 
 Start the development server:
-
+```bash
 npm run dev
+```
 
-Open the local URL provided by Vite in your browser.
+Open the local URL provided by Vite in your browser (usually `http://localhost:5173`).
 
-🔗 Full Application Flow
+> Both the backend and frontend must be running at the same time — the frontend calls the backend directly at `http://127.0.0.1:8000`.
+
+---
+
+## 🔗 Full Application Flow
 
 Once the backend and frontend are running:
 
+```text
 Browser
    ↓
 React Frontend
    ↓
-Backend API
+FastAPI Backend
    ↓
 Agentic RAG Engine
    ↓
@@ -501,84 +501,82 @@ Agentic RAG Engine
 │ Hugging Face Embeddings      │
 │ FAISS Vector Database        │
 │ Retrieval + Relevance Logic  │
-│ Query Reformulation           │
+│ Query Reformulation          │
 │                              │
 └──────────────────────────────┘
    ↓
 Answer + Trace
    ↓
 React Frontend
-🧪 Testing
+```
 
-The project contains:
+---
 
-backend/test_agent.py
+## 🧪 Testing
 
-Run tests using:
+A standalone command-line test script is included for quickly checking the agent without running the full API:
 
-pytest
+```bash
+cd backend
+python test_agent.py "your question here"
+```
 
-or:
+This prints the full reasoning trace and final answer directly to the terminal — useful for validating changes to `agent.py` before wiring them into the API.
 
-python -m pytest
+Areas covered manually via this script:
+- Direct-answer routing
+- Retrieval routing
+- Empty/insufficient retrieval handling
+- Relevance checking
+- Query reformulation
+- Retry limits
+- Final answer generation
 
-Potential test areas include:
+---
 
-Direct-answer routing
-Retrieval routing
-Empty retrieval handling
-Relevance checking
-Query reformulation
-Retry limits
-Final answer generation
-💻 Example
-User Query
+## 💻 Example
+
+**User Query:**
+
 What is the employee work-from-home policy?
-Agent Decision
-RETRIEVE
-Retrieval
-Retrieved 4 chunks
-Relevance Check
-NO
 
-The retrieved documents discuss office attendance
-but do not contain the remote work policy.
-Reformulated Query
-remote work WFH employee policy eligibility approval
-Second Retrieval
-Retrieved 4 chunks
-Relevance Check
-YES
-Final Answer
-The retrieved documents provide information about
-the company's work-from-home policy...
-📡 Example Trace
 
-A typical response can contain:
+**Trace:**
+```text
+Agent Decision   → RETRIEVE
+Retrieval        → Retrieved 4 chunks
+Relevance Check  → NO
+                   The retrieved documents discuss office attendance
+                   but do not contain the remote work policy.
+Reformulated     → "remote work WFH employee policy eligibility approval"
+Second Retrieval → Retrieved 4 chunks
+Relevance Check  → YES
+Final Answer     → The retrieved documents provide information about
+                   the company's work-from-home policy...
+```
 
+## 📡 Example Trace
+
+A typical `/chat` response:
+
+```json
 {
   "answer": "The requested information is available in the documents.",
   "trace": [
     {
       "step": "agent_decision",
       "detail": "Retrieve from documents",
-      "meta": {
-        "needs_retrieval": true
-      }
+      "meta": { "needs_retrieval": true }
     },
     {
       "step": "retrieve",
       "detail": "Retrieved 4 chunk(s)",
-      "meta": {
-        "num_chunks": 4
-      }
+      "meta": { "num_chunks": 4 }
     },
     {
       "step": "relevance_check",
       "detail": "The retrieved context is relevant.",
-      "meta": {
-        "relevant": true
-      }
+      "meta": { "relevant": true }
     },
     {
       "step": "final_answer",
@@ -586,13 +584,14 @@ A typical response can contain:
     }
   ]
 }
-🧩 Core Components
-backend/agent.py
+```
 
-The main Agentic RAG engine.
+---
 
-Responsible for:
+## 🧩 Core Components
 
+**`backend/agent.py`** — The main Agentic RAG engine. Responsible for:
+```text
 LLM Initialization
        ↓
 Embedding Initialization
@@ -610,179 +609,125 @@ Query Reformulation
 Answer Generation
        ↓
 Trace Generation
-backend/ingest.py
+```
 
-Responsible for processing documents and generating the FAISS vector store.
+**`backend/ingest.py`** — Processes documents and generates/updates the FAISS vector store:
+```text
+Documents → Load → Split → Embed → FAISS
+```
 
-Documents
-    ↓
-Load
-    ↓
-Split
-    ↓
-Embed
-    ↓
-FAISS
-backend/main.py
+**`backend/main.py`** — FastAPI application entry point. Connects the Agentic RAG engine with the frontend via `/chat`, `/upload`, and `/health` endpoints.
 
-Backend application/API entry point.
+**`backend/test_agent.py`** — Command-line test script for validating agent behavior without the API layer.
 
-It connects the Agentic RAG engine with the frontend.
+**`frontend/`** — React + Vite user interface. Communicates with the backend API and displays generated answers alongside a live execution trace.
 
-backend/test_agent.py
+---
 
-Contains tests for validating the backend Agentic RAG functionality.
-
-frontend/
-
-Contains the React + Vite user interface.
-
-The frontend communicates with the backend API and displays the generated answers and execution information.
-
-🧠 Why Agentic RAG?
+## 🧠 Why Agentic RAG?
 
 Traditional RAG assumes:
 
-Query
- ↓
-Retrieve
- ↓
-Generate
+Query → Retrieve → Generate
+
 
 But retrieval can fail due to:
-
-Ambiguous questions
-Different terminology
-Poor query formulation
-Similar but irrelevant documents
-Large knowledge bases
-Missing keywords
+- Ambiguous questions
+- Different terminology
+- Poor query formulation
+- Similar but irrelevant documents
+- Large knowledge bases
+- Missing keywords
 
 Agentic RAG adds a reasoning layer:
 
-Query
- ↓
-Decide
- ↓
-Retrieve
- ↓
-Evaluate
- ↓
-Recover if necessary
- ↓
-Generate
+Query → Decide → Retrieve → Evaluate → Recover if necessary → Generate
+
 
 This makes the retrieval workflow more adaptive.
 
-📊 Traditional RAG vs Agentic RAG
-Feature	Traditional RAG	This Project
-Query Routing	❌	✅
-Vector Search	✅	✅
-Relevance Checking	Usually ❌	✅
-Query Reformulation	Usually ❌	✅
-Retry Mechanism	Limited	✅
-Context Grounding	✅	✅
-Execution Trace	Usually ❌	✅
-Adaptive Retrieval	Limited	✅
-🛡️ Reliability
+### 📊 Traditional RAG vs Agentic RAG
 
-The system includes several mechanisms to improve reliability:
+| Feature | Traditional RAG | This Project |
+|---|---|---|
+| Query Routing | ❌ | ✅ |
+| Vector Search | ✅ | ✅ |
+| Relevance Checking | Usually ❌ | ✅ |
+| Query Reformulation | Usually ❌ | ✅ |
+| Retry Mechanism | Limited | ✅ |
+| Context Grounding | ✅ | ✅ |
+| Execution Trace | Usually ❌ | ✅ |
+| Adaptive Retrieval | Limited | ✅ |
 
-Relevance Validation
+---
 
-Retrieved documents are evaluated before final generation.
+## 🛡️ Reliability
 
-Query Reformulation
+- **Relevance Validation** — Retrieved documents are evaluated before final generation.
+- **Query Reformulation** — Poor retrieval results trigger a new search query.
+- **Bounded Retries** — The system cannot enter an infinite retrieval loop.
+- **Context Grounding** — Final responses are generated using retrieved context.
+- **Empty Retrieval Handling** — The application handles cases where no documents are retrieved.
+- **Execution Tracing** — Every major stage can be monitored and debugged.
 
-Poor retrieval results trigger a new search query.
+---
 
-Bounded Retries
-
-The system cannot enter an infinite retrieval loop.
-
-Context Grounding
-
-Final responses are generated using retrieved context.
-
-Empty Retrieval Handling
-
-The application handles cases where no documents are retrieved.
-
-Execution Tracing
-
-Every major stage can be monitored and debugged.
-
-⚠️ Current Limitations
+## ⚠️ Current Limitations
 
 This project is an Agentic RAG foundation and can be improved further.
 
-LLM-Based Relevance Evaluation
+- **LLM-Based Relevance Evaluation** — The relevance checker depends on an LLM and may occasionally make incorrect judgments.
+- **Retrieval Ranking** — The current system relies primarily on vector similarity retrieval.
+- **Source Citations** — Document names, page numbers, and exact source references can be added to final answers.
+- **Conversation Memory** — Multi-turn conversational memory can be added for more advanced use cases.
+- **Production Observability** — The existing trace mechanism can be integrated with dedicated monitoring and evaluation platforms.
 
-The relevance checker depends on an LLM and may occasionally make incorrect judgments.
+---
 
-Retrieval Ranking
+## 🚀 Future Improvements
 
-The current system relies primarily on vector similarity retrieval.
+- [ ] Source/document citations
+- [ ] Page-level references
+- [ ] Retrieval similarity thresholds
+- [ ] Hybrid keyword + vector search
+- [ ] Cross-encoder reranking
+- [ ] Conversation memory
+- [ ] Multi-document reasoning
+- [ ] Streaming responses
+- [ ] Structured LLM outputs / Pydantic validation
+- [ ] Hallucination detection & RAG evaluation
+- [ ] Automated evaluation datasets
+- [ ] Docker deployment
+- [ ] Authentication & rate limiting
+- [ ] CI/CD & production monitoring
 
-Source Citations
+---
 
-Document names, page numbers, and exact source references can be added to final answers.
+## 🔒 Security & Privacy
 
-Conversation Memory
-
-Multi-turn conversational memory can be added for more advanced use cases.
-
-Production Observability
-
-The existing trace mechanism can be integrated with dedicated monitoring and evaluation platforms.
-
-🚀 Future Improvements
- Source/document citations
- Page-level references
- Retrieval similarity thresholds
- Hybrid keyword + vector search
- Cross-encoder reranking
- Conversation memory
- Multi-document reasoning
- Streaming responses
- Structured LLM outputs
- Pydantic validation
- Hallucination detection
- RAG evaluation
- Automated evaluation datasets
- Docker deployment
- Authentication
- Rate limiting
- CI/CD
- Production monitoring
-🔒 Security & Privacy
-
-Private and generated data should never be committed to the repository.
-
-The following are excluded using .gitignore:
+Private and generated data should never be committed to the repository. The following are excluded using `.gitignore`:
 
 .env
 .venv/
-__pycache__/
+pycache/
 backend/pdfs/
 backend/uploads/
 backend/vector_store/
 frontend/node_modules/
 *.pdf
-Never upload:
-API keys
-Passwords
-Private documents
-User-uploaded files
-Personal information
-Production credentials
+
+
+**Never upload:** API keys, passwords, private documents, user-uploaded files, personal information, production credentials.
 
 If an API key is accidentally pushed to GitHub, immediately revoke/rotate the key.
 
-📈 Production Architecture
+---
+
+## 📈 Production Architecture
 
 The project can be extended into a production AI system:
 
+```text
                          ┌───────────────┐
                          │     User      │
                          └───────┬───────┘
@@ -817,29 +762,19 @@ The project can be extended into a production AI system:
                                  │
                                  ▼
                           Trace / Monitoring
-🎓 Key Learning Outcomes
+```
+
+---
+
+## 🎓 Key Learning Outcomes
 
 This project provided practical experience with:
 
-Retrieval-Augmented Generation
-Agentic AI
-Large Language Models
-LLM orchestration
-Semantic search
-Vector databases
-Embeddings
-Prompt engineering
-Retrieval routing
-Relevance grading
-Query reformulation
-Retry strategies
-Context grounding
-Python backend development
-React frontend development
-API integration
-AI application architecture
-Execution tracing
-💡 Project Goal
+Retrieval-Augmented Generation · Agentic AI · Large Language Models · LLM orchestration · Semantic search · Vector databases · Embeddings · Prompt engineering · Retrieval routing · Relevance grading · Query reformulation · Retry strategies · Context grounding · Python backend development · React frontend development · API integration · AI application architecture · Execution tracing
+
+---
+
+## 💡 Project Goal
 
 The goal of this project was to move beyond simply calling an LLM API and build a more structured AI system where the LLM participates in decision-making and retrieval control.
 
@@ -847,8 +782,9 @@ Instead of:
 
 LLM + Vector Database
 
-the system follows:
 
+the system follows:
+```text
 LLM
  ↓
 Decision
@@ -860,31 +796,26 @@ Evaluation
 Recovery
  ↓
 Generation
+```
 
 This architecture provides a foundation for building more adaptive and reliable AI applications.
 
-👨‍💻 Author
-Ranjith
+---
 
-AI / GenAI Engineer | Python Developer | Computer Science Student
+## 👨‍💻 Author
 
-Areas of Interest
-Generative AI
-Agentic AI
-Retrieval-Augmented Generation
-LLM Applications
-AI Automation
-Machine Learning
-Python
-AI Engineering
-⭐ If You Find This Project Useful
+**Ranjith**
+AI / GenAI Engineer | Python Developer | Computer Science Graduate
+
+**Areas of Interest:** Generative AI · Agentic AI · Retrieval-Augmented Generation · LLM Applications · AI Automation · Machine Learning · Python · AI Engineering
+
+---
+
+## ⭐ If You Find This Project Useful
 
 If you find this project useful or interesting:
 
-⭐ Star the repository
-
-🍴 Fork the project
-
-💬 Share your feedback
-
-🤝 Connect with me
+- ⭐ Star the repository
+- 🍴 Fork the project
+- 💬 Share your feedback
+- 🤝 Connect with me
